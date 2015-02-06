@@ -15,4 +15,6 @@ def connect(mpdclient):
 
 mpdclient = mpd.MPDClient()
 connect(mpdclient)
-bands = set(mpdclient.list("artist"))
+bands = set(str(artist).lower() for artist in mpdclient.list("artist")
+            if artist != "")
+print(bands)
