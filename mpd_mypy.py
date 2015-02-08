@@ -95,16 +95,20 @@ class Artist_db():
 
         :param artists: list of artists to compare the db with
         :type artists: list
-        :returns nb_off_diff: number of artists removed or added
-        :rtype: int
+        :returns (added, deleted): tuple of removed and added artists list
+        :rtype: tuple
         """
         a_diff = self._diff_artists(artists)
+        added = []
+        removed = []
         for a in a_diff:
             if a in self.artists:
                 self.remove(a)
+                removed.append(a)
             else:
                 self.add(a)
-        return len(a_diff)
+                added.append(a)
+        return (added, removed)
 
 
 def connect(mpdclient):
@@ -124,5 +128,11 @@ except mpd.ConnectionError:
     connect(mpdclient)
     artists = set(str(artist).lower() for artist in mpdclient.list("artist")
                   if artist != "")
-print(artist_db.merge(artists), "artist(s) updated")
+
+artists_removed, artists_added = artist_db.merge(artists)
 artist_db.save()
+
+print(len(artists_added), "artist(s) added")
+print(len(artists_removed), "artist(s) removed")
+print("Total: ", len(artists_added) + len(artists_removed),
+      "artist(s) updated")
