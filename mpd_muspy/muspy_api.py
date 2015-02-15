@@ -2,8 +2,27 @@
 # Author: Anthony Ruhier
 
 import json
+import musicbrainzngs
 import urllib.request
 from config import MUSPY_USERNAME, MUSPY_PASSWORD, MUSPY_ID
+from . import _release_name, _version
+
+
+class ArtistNotFoundException(Exception):
+    pass
+
+
+def get_mbid(artist):
+    """
+    Get the musicbrainz id of an artist
+    """
+    musicbrainzngs.set_useragent(_release_name, _version)
+    result = musicbrainzngs.search_artists(artist)
+    try:
+        artist_mbid = result["artist-list"][0]["id"]
+    except (KeyError, IndexError):
+        raise ArtistNotFoundException("Artist not found")
+    return artist_mbid
 
 
 class Muspy_api():

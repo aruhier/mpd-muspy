@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 import mpd
-from artist_db import Artist_db
+from mpd_muspy.artist_db import Artist_db
 
 SERVER = "localhost"
 PORT = 6600
