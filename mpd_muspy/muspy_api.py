@@ -16,6 +16,12 @@ class ArtistNotFoundException(Exception):
 def get_mbid(artist):
     """
     Get the musicbrainz id of an artist
+
+    TODO: if multiple artists exist for the same name, have to search in the
+    mpd library for an album of this artist, and then search the corresponding
+    artist id on MusicBrainz.
+
+    :param artist: artist name to get the id
     """
     musicbrainzngs.set_useragent(_release_name, _version)
     result = musicbrainzngs.search_artists(artist)
