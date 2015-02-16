@@ -3,6 +3,7 @@
 
 import json
 import musicbrainzngs
+import urllib.error
 import urllib.request
 from config import MUSPY_USERNAME, MUSPY_PASSWORD, MUSPY_ID
 from . import _release_name, _version
@@ -59,14 +60,35 @@ class Muspy_api():
         auth_handler.passwd.add_password(
             None, self._muspy_api_url, MUSPY_USERNAME, MUSPY_PASSWORD
         )
-        self._urlopener = urllib.request.build_opener(auth_handler)
+        http_handler = urllib.request.HTTPHandler()
+        self._urlopener = urllib.request.build_opener(
+            auth_handler,
+            http_handler)
 
-    def add_artist(self, mbid):
+    def add_artist_mbid(self, mbid):
         """
-        Add artist to the muspy account
+        Add artist by its MusicBrainz id to the muspy account
 
-        :param mbid: MusicBrainz id of the artist to add
+        :param mbid: MusicBrainz id of the artist
         """
+        request = urllib.request.Request(
+            url=urllib.request.urljoin(
+                self._muspy_api_url,
+                "artists/" + self.user_id + "/" + str(mbid)),
+        )
+        request.get_method = lambda: 'PUT'
+        try:
+            self._urlopener.open(request)
+        except urllib.error.HTTPError:
+            raise ArtistNotFoundException("Artist not found")
+
+    def add_artist(self, artist):
+        """
+        Add artist by its name to the muspy account
+
+        :param artist: Artist name to add
+        """
+        return self.add_artist_mbid(get_mbid(artist))
 
     def get_artists(self):
         """
@@ -83,3 +105,6 @@ class Muspy_api():
         artists = self._urlopener.open(self._muspy_api_url + "artists/" +
                                        self.user_id)
         return json.loads(artists.readall().decode())
+
+    def get_urlopener(self):
+        return self._urlopener
