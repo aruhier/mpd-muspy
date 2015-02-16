@@ -60,10 +60,7 @@ class Muspy_api():
         auth_handler.passwd.add_password(
             None, self._muspy_api_url, MUSPY_USERNAME, MUSPY_PASSWORD
         )
-        http_handler = urllib.request.HTTPHandler()
-        self._urlopener = urllib.request.build_opener(
-            auth_handler,
-            http_handler)
+        self._urlopener = urllib.request.build_opener(auth_handler)
 
     def add_artist_mbid(self, mbid):
         """
