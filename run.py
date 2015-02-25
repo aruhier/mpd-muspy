@@ -2,10 +2,7 @@
 
 import mpd
 from mpd_muspy.artist_db import Artist_db
-
-SERVER = "localhost"
-PORT = 6600
-ARTISTS_JSON = "artists.json"
+from config import ARTISTS_JSON, SERVER, PORT
 
 
 def connect(mpdclient):
