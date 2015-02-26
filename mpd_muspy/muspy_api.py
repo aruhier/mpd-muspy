@@ -1,35 +1,70 @@
 #!/usr/bin/python
 # Author: Anthony Ruhier
 
+import mpd
 import json
 import musicbrainzngs
 import urllib.error
 import urllib.request
-from config import MUSPY_USERNAME, MUSPY_PASSWORD, MUSPY_ID
+from config import SERVER, PORT, MUSPY_USERNAME, MUSPY_PASSWORD, MUSPY_ID
 from . import _release_name, _version
+
+musicbrainzngs.set_useragent(_release_name, _version)
 
 
 class ArtistNotFoundException(Exception):
     pass
 
 
-def get_mbid(artist):
+def get_mpd_albums(artist, mpdclient):
+    """
+    Get list of albums in the mpd database for an artist
+
+    :param artist: artist name to filter
+    :param mpdclient: connector with the mpd server
+    :type mpdclient: mpd.MPDClient()
+    """
+    try:
+        mpdclient.status()
+    except mpd.ConnectionError:
+        mpdclient.connect(SERVER, PORT)
+    # The mpd module is using case sensitive filters in list(). Artist has to
+    # be spelled correctly
+    try:
+        artist_cs = mpdclient.search("artist", artist)[0]["artist"]
+    except IndexError:
+        raise ArtistNotFoundException("Artist is not in the mpd database")
+    return mpdclient.list("album", "artist", artist_cs)
+
+
+def get_mbid(artist, mpdclient):
     """
     Get the musicbrainz id of an artist
 
-    TODO: if multiple artists exist for the same name, have to search in the
-    mpd library for an album of this artist, and then search the corresponding
-    artist id on MusicBrainz.
+    Search the artist id from the album we have in the mpd database to be
+    almost sure the result is good.
 
     :param artist: artist name to get the id
     """
-    musicbrainzngs.set_useragent(_release_name, _version)
     result = musicbrainzngs.search_artists(artist)
-    try:
-        artist_mbid = result["artist-list"][0]["id"]
-    except (KeyError, IndexError):
+    if result["artist-count"] == 0:
         raise ArtistNotFoundException("Artist not found")
-    return artist_mbid
+    artists_prop = [a["id"] for a in result["artist-list"]]
+    if result["artist-count"] == 1:
+        return artists_prop[0]
+
+    # Tries to get the artist id of one of our album of this artist
+    albums = get_mpd_albums(artist, mpdclient)
+    # We don't want to test all choices returned by musicbrainz for an album,
+    # so we will keep only the LIMIT_NB_ALBUM'th first ones.
+    LIMIT_NB_ALBUM = 10
+    for album in albums:
+        result = musicbrainzngs.search_releases(album)["release-list"]
+        for i in range(min(len(result), LIMIT_NB_ALBUM)):
+            artist_id = result[i]["artist-credit"][0]["artist"]["id"]
+            if artist_id in artists_prop:
+                return artist_id
+    return artists_prop[0]
 
 
 class Muspy_api():
@@ -48,11 +83,14 @@ class Muspy_api():
     #: muspy user id
     user_id = None
 
+    _mpdclient = None
+
     def __init__(self, username=MUSPY_USERNAME, password=MUSPY_PASSWORD,
                  user_id=MUSPY_ID, *args, **kwargs):
         self.username = username
         self.password = password
         self.user_id = user_id
+        self._mpdclient = mpd.MPDClient()
         self._setup_auth_url()
 
     def _setup_auth_url(self):
@@ -91,7 +129,7 @@ class Muspy_api():
 
         :param artist: Artist name to add
         """
-        return self.add_artist_mbid(get_mbid(artist))
+        return self.add_artist_mbid(get_mbid(artist, self._mpdclient))
 
     def get_artists(self):
         """
