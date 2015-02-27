@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import mpd
+import threading
 import sys
 from mpd_muspy.artist_db import Artist_db
 try:
@@ -12,11 +13,47 @@ except ImportError:
 from mpd_muspy.muspy_api import Muspy_api
 
 
+class SyncThread(threading.Thread):
+    """
+    Launch synchronisation with muspy
+    """
+    def __init__(self, artists, artist_db, muspy_api, lock):
+        super().__init__()
+        self.artists = artists
+        self.artist_db = artist_db
+        self.muspy_api = muspy_api
+        self.lock = lock
+
+    def run(self):
+        for artist in self.artists:
+            try:
+                self.muspy_api.add_artist(artist)
+                self.lock.acquire()
+                self.artist_db.mark_as_uploaded(artist)
+                print("Artist:", artist, ". Done...")
+                self.lock.release()
+            except Exception as e:
+                print(e)
+                pass
+            finally:
+                self.lock.acquire()
+                self.artist_db.save()
+                self.lock.release()
+
+
 def connect(mpdclient):
     """
     Handle connection to the mpd server
     """
     mpdclient.connect(SERVER, PORT)
+
+
+def chunks(l, n):
+    """
+    Yield successive n-sized chunks from l.
+    """
+    for i in range(0, len(l), n):
+        yield l[i:i+n]
 
 
 artist_db = Artist_db(jsonpath=ARTISTS_JSON)
@@ -40,14 +77,15 @@ print(len(artists_removed), "artist(s) removed")
 print("Total: ", len(artists_added) + len(artists_removed),
       "artist(s) updated")
 
+lock = threading.Lock()
+threads = []
 muspy_api = Muspy_api()
-for artist in non_uploaded_artists:
-    try:
-        muspy_api.add_artist(artist)
-        artist_db.mark_as_uploaded(artist)
-        print("Artist:", artist, ". Done...")
-    except Exception as e:
-        print(e)
-        pass
-    finally:
-        artist_db.save()
+for l in chunks(non_uploaded_artists, 10):
+    thread = SyncThread(artists=l, artist_db=artist_db, muspy_api=muspy_api,
+                        lock=lock)
+    thread.daemon = True
+    thread.start()
+    threads.append(thread)
+
+for thread in threads:
+    thread.join()

@@ -46,7 +46,8 @@ def get_mbid(artist, mpdclient):
 
     :param artist: artist name to get the id
     """
-    result = musicbrainzngs.search_artists(artist)
+    LIMIT_NB_ARTIST = 15
+    result = musicbrainzngs.search_artists(artist, LIMIT_NB_ARTIST)
     if result["artist-count"] == 0:
         raise ArtistNotFoundException("Artist not found")
     artists_prop = [a["id"] for a in result["artist-list"]]
@@ -59,7 +60,8 @@ def get_mbid(artist, mpdclient):
     # so we will keep only the LIMIT_NB_ALBUM'th first ones.
     LIMIT_NB_ALBUM = 10
     for album in albums:
-        result = musicbrainzngs.search_releases(album)["release-list"]
+        result = musicbrainzngs.search_releases(album, limit=LIMIT_NB_ALBUM)[
+            "release-list"]
         for i in range(min(len(result), LIMIT_NB_ALBUM)):
             artist_id = result[i]["artist-credit"][0]["artist"]["id"]
             if artist_id in artists_prop:
