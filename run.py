@@ -1,8 +1,14 @@
 #!/usr/bin/python
 
 import mpd
+import sys
 from mpd_muspy.artist_db import Artist_db
-from config import ARTISTS_JSON, SERVER, PORT
+try:
+    from config import ARTISTS_JSON, SERVER, PORT
+except ImportError:
+    print("Configuration file config.py not found. Please copy the "
+          "config.py.default as config.py.", file=sys.stderr)
+    sys.exit(1)
 
 
 def connect(mpdclient):

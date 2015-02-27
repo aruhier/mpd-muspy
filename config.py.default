@@ -1,0 +1,15 @@
+#!/usr/bin/python
+# Author: Anthony Ruhier
+
+# MPD server IP/URL
+SERVER = ""
+# MPD server port
+PORT = 6600
+
+# Artist database name
+ARTISTS_JSON = "artists.json"
+
+# MuSpy username
+MUSPY_USERNAME = ""
+MUSPY_PASSWORD = ""
+MUSPY_ID = ""
