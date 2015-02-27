@@ -61,10 +61,12 @@ def mpd_get_artists(artist_db, mpdclient):
 
 
 def start_threads(non_uploaded_artists, artist_db):
+    nb_threads = 5
     lock = threading.Lock()
     threads = []
     muspy_api = Muspy_api()
-    for l in chunks(non_uploaded_artists, 3):
+    nb_artists_by_split = int(len(non_uploaded_artists) / nb_threads)
+    for l in chunks(non_uploaded_artists, nb_artists_by_split):
         thread = SyncThread(artists=l, artist_db=artist_db,
                             muspy_api=muspy_api, lock=lock)
         thread.daemon = True
