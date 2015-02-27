@@ -9,6 +9,7 @@ except ImportError:
     print("Configuration file config.py not found. Please copy the "
           "config.py.default as config.py.", file=sys.stderr)
     sys.exit(1)
+from mpd_muspy.muspy_api import Muspy_api
 
 
 def connect(mpdclient):
@@ -31,8 +32,22 @@ except mpd.ConnectionError:
 
 artists_removed, artists_added = artist_db.merge(artists)
 artist_db.save()
+non_uploaded_artists = artist_db.get_non_uploaded()
 
+print(len(non_uploaded_artists), "artist(s) non uploaded on muspy")
 print(len(artists_added), "artist(s) added")
 print(len(artists_removed), "artist(s) removed")
 print("Total: ", len(artists_added) + len(artists_removed),
       "artist(s) updated")
+
+muspy_api = Muspy_api()
+for artist in non_uploaded_artists:
+    try:
+        muspy_api.add_artist(artist)
+        artist_db.mark_as_uploaded(artist)
+        print("Artist:", artist, ". Done...")
+    except Exception as e:
+        print(e)
+        pass
+    finally:
+        artist_db.save()

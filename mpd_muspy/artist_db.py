@@ -12,7 +12,10 @@ class Artist_db():
         if jsonpath is not None:
             try:
                 self.load()
-            except:
+            except FileNotFoundError:
+                pass
+            except Exception as e:
+                print(e)
                 pass
 
     def _diff_artists(self, artists):
@@ -41,7 +44,7 @@ class Artist_db():
         Save the artists list into the json file
         """
         new_db = not os.path.exists(self.jsonpath)
-        fmode = "a+" if new_db else "r+"
+        fmode = "a+" if new_db else "w+"
         try:
             with open(self.jsonpath, fmode) as f:
                 json.dump(self.artists, f, indent=4)
@@ -84,6 +87,21 @@ class Artist_db():
 
         if artists in self.artists.keys:
             self.artists.pop(artists)
+
+    def get_non_uploaded(self):
+        """
+        Get the list of the non uploaded (on muspy) artists.
+
+        :returns artists
+        """
+        return [artist for artist, val in self.artists.items()
+                if self.artists[artist]["uploaded"] is False]
+
+    def mark_as_uploaded(self, artist):
+        """
+        Mark an artist as uploaded
+        """
+        self.artists[artist]["uploaded"] = True
 
     def merge(self, artists):
         """
