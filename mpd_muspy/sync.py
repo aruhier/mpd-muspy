@@ -41,18 +41,23 @@ def mpd_get_artists(artist_db, mpdclient):
     return artists
 
 
-def process_task(artists, artist_db, muspy_api, lock):
+def process_task(artists, artists_nb, artist_db, muspy_api, lock, counter):
     for artist in artists:
+        error = ""
         try:
             muspy_api.add_artist(artist)
-            lock.acquire()
-            artist_db.mark_as_uploaded(artist)
-            artist_db.save()
-            lock.release()
-            print("Artist:", artist, ". Done...")
+            with lock:
+                artist_db.mark_as_uploaded(artist)
+                artist_db.save()
         except Exception as e:
-            print(e)
+            error = "Error: " + str(e)
             pass
+        finally:
+            with lock:
+                counter.value += 1
+            print("[", counter.value, "/", artists_nb, "]:", artist.title())
+            if error:
+                print(error)
 
 
 def start_process(non_uploaded_artists, artist_db):
@@ -60,12 +65,15 @@ def start_process(non_uploaded_artists, artist_db):
     lock = multiprocessing.Lock()
     process_list = []
     muspy_api = Muspy_api()
-    nb_artists_by_split = int(len(non_uploaded_artists) / NB_MULTIPROCESS)
-    for l in chunks(non_uploaded_artists, nb_artists_by_split):
+    counter = multiprocessing.Value("i", 0)
+    artists_nb = len(non_uploaded_artists)
+    artists_nb_by_split = int(artists_nb / NB_MULTIPROCESS)
+    for l in chunks(non_uploaded_artists, artists_nb_by_split):
         process = multiprocessing.Process(
             target=process_task,
-            kwargs={"artists": l, "artist_db": artist_db,
-                    "muspy_api": muspy_api, "lock": lock}
+            kwargs={"artists": l, "artists_nb": artists_nb,
+                    "artist_db": artist_db, "muspy_api": muspy_api,
+                    "lock": lock, "counter": counter}
         )
         process.daemon = True
         process.start()
@@ -91,6 +99,7 @@ def run():
     print(len(artists_added), "artist(s) added")
     print(len(artists_removed), "artist(s) removed")
 
+    print("\n   Start syncing  \n =================\n")
     start_process(non_uploaded_artists, artist_db)
     print("Done: ",
           len(non_uploaded_artists) - len(artist_db.get_non_uploaded()),
