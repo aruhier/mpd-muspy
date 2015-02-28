@@ -36,7 +36,7 @@ class Artist_db():
         """
         Refresh the artists list from the json file
         """
-        with open(self.jsonpath, "r+") as f:
+        with open(self.jsonpath, "r") as f:
             self.artists = json.load(f)
 
     def save(self):
@@ -44,7 +44,7 @@ class Artist_db():
         Save the artists list into the json file
         """
         new_db = not os.path.exists(self.jsonpath)
-        fmode = "a+" if new_db else "w+"
+        fmode = "a" if new_db else "w"
         try:
             with open(self.jsonpath, fmode) as f:
                 json.dump(self.artists, f, indent=4)

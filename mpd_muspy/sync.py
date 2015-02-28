@@ -3,41 +3,22 @@
 
 import os
 import mpd
-import threading
+import multiprocessing
+from multiprocessing.managers import BaseManager
 from .muspy_api import Muspy_api
 from .artist_db import Artist_db
 from . import _current_dir
 from config import ARTISTS_JSON, SERVER, PORT
 
 ARTISTS_JSON = os.path.join(_current_dir, ARTISTS_JSON)
+NB_MULTIPROCESS = 3
 
 
-class SyncThread(threading.Thread):
-    """
-    Launch synchronisation with muspy
-    """
-    def __init__(self, artists, artist_db, muspy_api, lock):
-        super().__init__()
-        self.artists = artists
-        self.artist_db = artist_db
-        self.muspy_api = muspy_api
-        self.lock = lock
+class SyncManager(BaseManager):
+    pass
 
-    def run(self):
-        for artist in self.artists:
-            try:
-                self.muspy_api.add_artist(artist)
-                self.lock.acquire()
-                self.artist_db.mark_as_uploaded(artist)
-                print("Artist:", artist, ". Done...")
-                self.lock.release()
-            except Exception as e:
-                print(e)
-                pass
-            finally:
-                self.lock.acquire()
-                self.artist_db.save()
-                self.lock.release()
+SyncManager.register('Artist_db', Artist_db)
+SyncManager.register('Muspy_api', Muspy_api)
 
 
 def chunks(l, n):
@@ -60,25 +41,44 @@ def mpd_get_artists(artist_db, mpdclient):
     return artists
 
 
-def start_threads(non_uploaded_artists, artist_db):
-    nb_threads = 5
-    lock = threading.Lock()
-    threads = []
-    muspy_api = Muspy_api()
-    nb_artists_by_split = int(len(non_uploaded_artists) / nb_threads)
-    for l in chunks(non_uploaded_artists, nb_artists_by_split):
-        thread = SyncThread(artists=l, artist_db=artist_db,
-                            muspy_api=muspy_api, lock=lock)
-        thread.daemon = True
-        thread.start()
-        threads.append(thread)
+def process_task(artists, artist_db, muspy_api, lock):
+    for artist in artists:
+        try:
+            muspy_api.add_artist(artist)
+            lock.acquire()
+            artist_db.mark_as_uploaded(artist)
+            artist_db.save()
+            lock.release()
+            print("Artist:", artist, ". Done...")
+        except Exception as e:
+            print(e)
+            pass
 
-    for thread in threads:
-        thread.join()
+
+def start_process(non_uploaded_artists, artist_db):
+    process_list = []
+    lock = multiprocessing.Lock()
+    process_list = []
+    muspy_api = Muspy_api()
+    nb_artists_by_split = int(len(non_uploaded_artists) / NB_MULTIPROCESS)
+    for l in chunks(non_uploaded_artists, nb_artists_by_split):
+        process = multiprocessing.Process(
+            target=process_task,
+            kwargs={"artists": l, "artist_db": artist_db,
+                    "muspy_api": muspy_api, "lock": lock}
+        )
+        process.daemon = True
+        process.start()
+        process_list.append(process)
+
+    for process in process_list:
+        process.join()
 
 
 def run():
-    artist_db = Artist_db(jsonpath=ARTISTS_JSON)
+    process_manager = SyncManager()
+    process_manager.start()
+    artist_db = process_manager.Artist_db(jsonpath=ARTISTS_JSON)
     mpdclient = mpd.MPDClient()
 
     artists = mpd_get_artists(artist_db, mpdclient)
@@ -91,7 +91,7 @@ def run():
     print(len(artists_added), "artist(s) added")
     print(len(artists_removed), "artist(s) removed")
 
-    start_threads(non_uploaded_artists, artist_db)
+    start_process(non_uploaded_artists, artist_db)
     print("Done: ",
           len(non_uploaded_artists) - len(artist_db.get_non_uploaded()),
           "artist(s) updated")
