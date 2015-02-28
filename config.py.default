@@ -2,14 +2,23 @@
 # Author: Anthony Ruhier
 
 # MPD server IP/URL
-SERVER = ""
+SERVER = "localhost"
 # MPD server port
 PORT = 6600
 
-# Artist database name
+# Artist database name (should use default value)
 ARTISTS_JSON = "artists.json"
 
-# MuSpy username
-MUSPY_USERNAME = ""
-MUSPY_PASSWORD = ""
-MUSPY_ID = ""
+
+# MuSpy informations #
+######################
+
+# Change this variable if you use a self-hosted muspy instance
+MUSPY_ADDR = "https://muspy.com/api/1/"
+# Muspy account
+MUSPY_USERNAME = "username"
+MUSPY_PASSWORD = "password"
+# You can get this id by going in the RSS feed of Muspy:
+# Exemple: https://muspy.com/feed?id=6d4345081899407eb5bcad2be536b989
+#          The muspy id for this user is "6d4345081899407eb5bcad2be536b989"
+MUSPY_ID = "6d4345081899407eb5bcad2be536b989"

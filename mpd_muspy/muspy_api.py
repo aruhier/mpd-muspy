@@ -6,7 +6,8 @@ import json
 import musicbrainzngs
 import urllib.error
 import urllib.request
-from config import SERVER, PORT, MUSPY_USERNAME, MUSPY_PASSWORD, MUSPY_ID
+from config import SERVER, PORT, MUSPY_ADDR, MUSPY_USERNAME, MUSPY_PASSWORD, \
+                   MUSPY_ID
 from . import _release_name, _version
 
 musicbrainzngs.set_useragent(_release_name, _version)
@@ -60,18 +61,21 @@ def get_mbid(artist, mpdclient):
     # so we will keep only the LIMIT_NB_ALBUM'th first ones.
     LIMIT_NB_ALBUM = 10
     for album in albums:
-        result = musicbrainzngs.search_releases(album, limit=LIMIT_NB_ALBUM)[
-            "release-list"]
-        for i in range(min(len(result), LIMIT_NB_ALBUM)):
-            artist_id = result[i]["artist-credit"][0]["artist"]["id"]
-            if artist_id in artists_prop:
-                return artist_id
+        try:
+            result = musicbrainzngs.search_releases(
+                album, limit=LIMIT_NB_ALBUM)["release-list"]
+            for i in result:
+                artist_id = i["artist-credit"][0]["artist"]["id"]
+                if artist_id in artists_prop:
+                    return artist_id
+        except:
+            pass
     return artists_prop[0]
 
 
 class Muspy_api():
     #: URL to target the muspy api
-    _muspy_api_url = "https://muspy.com/api/1/"
+    _muspy_api_url = MUSPY_ADDR
 
     #: custom opener with authentication
     _urlopener = None
