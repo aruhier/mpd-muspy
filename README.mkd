@@ -1,0 +1,58 @@
+MPD Music Spy (beta)
+====================
+
+Tool to synchronize artists of a MPD database with [Muspy](https://muspy.com).
+
+
+Details
+-------
+
+An advantage of music players in the cloud like Spotify is that you can easily
+know when an artist you are following releases a new album. If you do not use
+this sort of music players, you can easily follow the releases with
+[Muspy](https://muspy.com).
+
+Problem: you do not want to add manually all the artists of your library.
+
+MPD Music Spy is here to solve that for MPD, and add in your MuSpy account all
+the artists listed in your MPD database.
+
+
+Dependencies
+------------
+  * python 2.7 or 3.4 (it certainly works with prior versions, just not tested)
+  * python-mpd2
+  * python-musicbrainzngs
+
+
+Configuration
+-------------
+
+Copy the default configuration file `config.py.default` as `config.py`.
+<b>Please do not modify or remove `config.py.default` if you cloned this
+repository.  Always do your modifications in config.py.</b> Then modify
+`config.py` for your setup (documentation is inside).
+
+
+Usage
+-----
+
+Just run: `python sync.py`.
+
+The synchronisation could be long the first time, as it uses MusicBrainz to get
+the artists id. A double check is done when querying the id, by using the
+albums in the MPD database, to be almost sure to match the good artist, but it
+makes the synchronisation a bit longer.
+
+For the next synchronisations, it uses the `artists.json` file to know which
+artists were added on MuSpy and which were not.
+
+For the moment, MPD Music Spy only add new artists, it does not remove on MuSpy
+the ones deleted in MPD.
+
+
+License
+-------
+
+Tool under the BSD license. Do not hesitate to report bugs, ask me some
+questions or do some pull request if you want to !
