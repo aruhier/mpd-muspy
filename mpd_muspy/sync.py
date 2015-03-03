@@ -24,12 +24,21 @@ SyncManager.register('Muspy_api', Muspy_api)
 def chunks(l, n):
     """
     Yield successive n-sized chunks from l.
+
+    :param l: list to split
+    :param n: number of elements wanted in each list split
     """
     for i in range(0, len(l), n):
         yield l[i:i+n]
 
 
-def mpd_get_artists(artist_db, mpdclient):
+def mpd_get_artists(mpdclient):
+    """
+    Get artists from MPD
+
+    :param mpdclient: connection with MPD
+    :type mpdclient: mpd.MPDClient()
+    """
     mpdclient.connect(SERVER, PORT)
     try:
         artists = set(str(artist).lower()
@@ -42,6 +51,25 @@ def mpd_get_artists(artist_db, mpdclient):
 
 
 def process_task(artists, artists_nb, artist_db, muspy_api, lock, counter):
+    """
+    Function launched by each process
+
+    Add artists on muspy and marks it in the artists database.
+
+    :param artists: list of artists split for this process
+    :type artists: list
+    :param artists_nb: total artists to upload. Different of len(artists), here
+                       it is the total number of artists of all processes.
+    :type artists: int
+    :param artist_db: database of artists, in the shared memory
+    :type artist_db: SyncManager.Artist_db()
+    :param muspy_api: custom api for muspy
+    :type muspy_api: Muspy_api()
+    :param lock: lock shared between the processes
+    :type lock: multiprocessing.Lock
+    :param counter: integer in the shared memory
+    :type counter: multiprocessing.Value("i")
+    """
     for artist in artists:
         error = ""
         try:
@@ -61,6 +89,14 @@ def process_task(artists, artists_nb, artist_db, muspy_api, lock, counter):
 
 
 def start_process(non_uploaded_artists, artist_db):
+    """
+    Initialize the synchronization in several process
+
+    :param non_uploaded_artists: list of artists name to upload
+    :type non_uploaded_artists: list
+    :param artist_db: Artist_db() object in the shared memory
+    :type artist_db: SyncManager.Artist_db
+    """
     process_list = []
     lock = multiprocessing.Lock()
     process_list = []
@@ -89,7 +125,7 @@ def run():
     artist_db = process_manager.Artist_db(jsonpath=ARTISTS_JSON)
     mpdclient = mpd.MPDClient()
 
-    artists = mpd_get_artists(artist_db, mpdclient)
+    artists = mpd_get_artists(mpdclient)
     artists_removed, artists_added = artist_db.merge(artists)
     artist_db.save()
     non_uploaded_artists = artist_db.get_non_uploaded()

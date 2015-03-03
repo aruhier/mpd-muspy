@@ -89,6 +89,7 @@ class Muspy_api():
     #: muspy user id
     user_id = None
 
+    #: MPDClient object
     _mpdclient = None
 
     def __init__(self, username=MUSPY_USERNAME, password=MUSPY_PASSWORD,
@@ -152,6 +153,3 @@ class Muspy_api():
         artists = self._urlopener.open(self._muspy_api_url + "artists/" +
                                        self.user_id)
         return json.loads(artists.readall().decode())
-
-    def get_urlopener(self):
-        return self._urlopener
