@@ -38,7 +38,7 @@ repository.  Always do your modifications in config.py.</b> Then modify
 Usage
 -----
 
-Just run: `python sync.py`.
+Just run: `python run.py`.
 
 The synchronisation could be long the first time, as it uses MusicBrainz to get
 the artists id. A double check is done when querying the id, by using the
