@@ -152,4 +152,5 @@ class Muspy_api():
         """
         artists = self._urlopener.open(self._muspy_api_url + "artists/" +
                                        self.user_id)
-        return json.loads(artists.readall().decode())
+        return [{"name": a["name"].lower(), "mbid": a["mbid"]}
+                for a in json.loads(artists.readall().decode())]
