@@ -11,6 +11,8 @@ from . import _current_dir
 from config import ARTISTS_JSON, SERVER, PORT
 
 ARTISTS_JSON = os.path.join(_current_dir, ARTISTS_JSON)
+# After multiple tests, it appears that this value is the best compromise to
+# avoid HTTP error 400 with the musicbrainz api
 NB_MULTIPROCESS = 3
 
 
@@ -89,7 +91,7 @@ def process_task(artists, artists_nb, artist_db, lock, counter):
                 print(error)
 
 
-def start_process(non_uploaded_artists, artist_db):
+def start_pool(non_uploaded_artists, artist_db):
     """
     Initialize the synchronization in several process
 
@@ -131,7 +133,7 @@ def run():
     print(len(artists_removed), "artist(s) removed")
 
     print("\n   Start syncing  \n =================\n")
-    start_process(non_uploaded_artists, artist_db)
+    start_pool(non_uploaded_artists, artist_db)
     print("Done: ",
           len(non_uploaded_artists) - len(artist_db.get_non_uploaded()),
           "artist(s) updated")
