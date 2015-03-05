@@ -50,7 +50,7 @@ def mpd_get_artists(mpdclient):
     return artists
 
 
-def process_task(artists, artists_nb, artist_db, muspy_api, lock, counter):
+def process_task(artists, artists_nb, artist_db, lock, counter):
     """
     Function launched by each process
 
@@ -70,6 +70,7 @@ def process_task(artists, artists_nb, artist_db, muspy_api, lock, counter):
     :param counter: integer in the shared memory
     :type counter: multiprocessing.Value("i")
     """
+    muspy_api = Muspy_api()
     for artist in artists:
         error = ""
         try:
@@ -97,26 +98,20 @@ def start_process(non_uploaded_artists, artist_db):
     :param artist_db: Artist_db() object in the shared memory
     :type artist_db: SyncManager.Artist_db
     """
-    process_list = []
-    lock = multiprocessing.Lock()
-    process_list = []
-    muspy_api = Muspy_api()
-    counter = multiprocessing.Value("i", 0)
+    manager = multiprocessing.Manager()
+    lock = manager.Lock()
+    counter = manager.Value("i", 0)
     artists_nb = len(non_uploaded_artists)
     artists_nb_by_split = int(artists_nb / NB_MULTIPROCESS)
+    pool = multiprocessing.Pool()
     for l in chunks(non_uploaded_artists, artists_nb_by_split):
-        process = multiprocessing.Process(
-            target=process_task,
-            kwargs={"artists": l, "artists_nb": artists_nb,
-                    "artist_db": artist_db, "muspy_api": muspy_api,
-                    "lock": lock, "counter": counter}
+        pool.apply_async(
+            process_task,
+            kwds={"artists": l, "artists_nb": artists_nb,
+                  "artist_db": artist_db, "lock": lock, "counter": counter}
         )
-        process.daemon = True
-        process.start()
-        process_list.append(process)
-
-    for process in process_list:
-        process.join()
+    pool.close()
+    pool.join()
 
 
 def run():
