@@ -52,6 +52,30 @@ def mpd_get_artists(mpdclient):
     return artists
 
 
+def update_artists_from_muspy(artist_db):
+    """
+    Update the uploaded state of artists from the ones already on the muspy
+    account.
+
+    :param artist_db: database of local artists
+    """
+    local_artists = artist_db.get_artists(group_by="uploaded")
+    mapi = Muspy_api()
+    muspy_artists = mapi.get_artists()
+    try:
+        non_uploaded_artists = local_artists[False]
+        for ma in muspy_artists:
+            try:
+                ma_name = ma["name"]
+                if ma_name in non_uploaded_artists:
+                    artist_db.mark_as_uploaded(ma_name)
+            except KeyError:
+                pass
+    except IndexError:
+        pass
+    artist_db.save()
+
+
 def process_task(artists, artists_nb, artist_db, lock, counter):
     """
     Function launched by each process
@@ -122,12 +146,18 @@ def run():
     artist_db = process_manager.Artist_db(jsonpath=ARTISTS_JSON)
     mpdclient = mpd.MPDClient()
 
+    print("Get mpd artists...")
     artists = mpd_get_artists(mpdclient)
     artists_removed, artists_added = artist_db.merge(artists)
+
+    # Update the uploaded status of artists in the db with the muspy account
+    print("Pre-synchronization with muspy...")
+    update_artists_from_muspy(artist_db)
     artist_db.save()
     non_uploaded_artists = artist_db.get_artists(uploaded=False)
     artists = None
 
+    print()
     print(len(non_uploaded_artists), "artist(s) non uploaded on muspy")
     print(len(artists_added), "artist(s) added")
     print(len(artists_removed), "artist(s) removed")
