@@ -125,7 +125,7 @@ def run():
     artists = mpd_get_artists(mpdclient)
     artists_removed, artists_added = artist_db.merge(artists)
     artist_db.save()
-    non_uploaded_artists = artist_db.get_non_uploaded()
+    non_uploaded_artists = artist_db.get_artists(uploaded=False)
     artists = None
 
     print(len(non_uploaded_artists), "artist(s) non uploaded on muspy")
@@ -135,5 +135,6 @@ def run():
     print("\n   Start syncing  \n =================\n")
     start_pool(non_uploaded_artists, artist_db)
     print("Done: ",
-          len(non_uploaded_artists) - len(artist_db.get_non_uploaded()),
+          len(non_uploaded_artists) -
+          len(artist_db.get_artists(uploaded=False)),
           "artist(s) updated")

@@ -6,7 +6,7 @@ import os
 
 
 class Artist_db():
-    def __init__(self, artists={}, jsonpath=None):
+    def __init__(self, jsonpath=None, artists={}):
         self.artists = artists
         self.jsonpath = jsonpath
         if jsonpath is not None:
@@ -31,6 +31,18 @@ class Artist_db():
         set_artists = set(artists)
         return db_keys.difference(set_artists).symmetric_difference(
             set_artists.difference(db_keys))
+
+    def _get_fields(self):
+        """
+        Get the database fields/columns
+
+        :returns fields
+        """
+        try:
+            fields = list(next(iter(self.artists.values())).keys())
+        except StopIteration:
+            fields = []
+        return fields
 
     def load(self):
         """
@@ -88,14 +100,30 @@ class Artist_db():
         if artists in self.artists.keys:
             self.artists.pop(artists)
 
-    def get_non_uploaded(self):
+    def get_artists(self, uploaded=None, group_by=None):
         """
-        Get the list of the non uploaded (on muspy) artists.
+        Get the list of artists name, with optional filter and group by.
+
+        If group_by is not None, will return a list of artist names group by
+        the wanted field.
 
         :returns artists
         """
-        return [artist for artist, val in self.artists.items()
-                if self.artists[artist]["uploaded"] is False]
+        artists = self.artists
+
+        if uploaded is not None:
+            artists = {artist: val for artist, val in self.artists.items()
+                       if val["uploaded"] == uploaded}
+
+        if group_by is not None and group_by in self._get_fields():
+            artists_grouped = dict()
+            for artist, val in artists.items():
+                if val[group_by] in artists_grouped.keys():
+                    artists_grouped[val[group_by]].append(artist)
+                else:
+                    artists_grouped[val[group_by]] = [artist, ]
+            return artists_grouped
+        return [artist for artist in artists.keys()]
 
     def mark_as_uploaded(self, artist):
         """
