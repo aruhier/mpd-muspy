@@ -20,7 +20,7 @@ the artists listed in your MPD database.
 
 Dependencies
 ------------
-  * python 2.7 or 3.4 (it certainly works with prior versions, just not tested)
+  * python 3.4 (it certainly works with prior versions, just not tested)
   * python-mpd2
   * python-musicbrainzngs
 
