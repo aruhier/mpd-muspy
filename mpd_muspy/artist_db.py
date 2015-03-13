@@ -100,13 +100,50 @@ class Artist_db():
         if artists in self.artists.keys:
             self.artists.pop(artists)
 
-    def get_artists(self, uploaded=None, group_by=None):
+    def _artists_grouped_by(self, artists, group_by, fields=None):
+        """
+        Return artists grouped by a field. The get_artists function would
+        already have done the filters
+
+        :param artists: artists to group by
+        :type artists: dict
+        :param group_by: field use to grouping
+        :param fields: get other fields, like musicbrainz id. By default, will
+                       just the names will be returned
+        """
+        artists_grouped = dict()
+        for artist, val in artists.items():
+            if fields is None:
+                artist_insert = artist
+            else:
+                artist_insert = {field: self.artists[artist][field]
+                                 for field in fields if field in
+                                 self.artists[artist].keys()}
+                artist_insert["name"] = artist
+
+            if val[group_by] in artists_grouped.keys():
+                artists_grouped[val[group_by]].append(artist_insert)
+            else:
+                artists_grouped[val[group_by]] = [artist_insert, ]
+        return artists_grouped
+
+    def get_artists(self, fields=None, uploaded=None, group_by=None):
         """
         Get the list of artists name, with optional filter and group by.
 
+        If fields is None, it will return a list of artist names. Otherwise, it
+        will return a list of dict, with the select fields as keys, and the
+        artist name with the key "name". If the field does not exist for an
+        artist, it will not ignored (for this artist).
         If group_by is not None, will return a list of artist names group by
         the wanted field.
 
+        :param fields: fields to select
+        :type fields: tuple
+        :param uploaded: filter on the uploaded field
+        :type uploaded: bool
+        :param group_by: group by a field
+        :type group_by: str
         :returns artists
         """
         artists = self.artists
@@ -116,20 +153,35 @@ class Artist_db():
                        if val["uploaded"] == uploaded}
 
         if group_by is not None and group_by in self._get_fields():
-            artists_grouped = dict()
-            for artist, val in artists.items():
-                if val[group_by] in artists_grouped.keys():
-                    artists_grouped[val[group_by]].append(artist)
-                else:
-                    artists_grouped[val[group_by]] = [artist, ]
-            return artists_grouped
-        return [artist for artist in artists.keys()]
+            return self._artists_grouped_by(artists, group_by, fields)
+
+        if fields is None:
+            artist_list = [artist for artist in artists.keys()]
+        else:
+            artist_list = []
+            for artist in artists:
+                artist_insert = {field: self.artists[artist][field]
+                                 for field in fields if field in
+                                 self.artists[artist].keys()}
+                artist_insert["name"] = artist
+                artist_list.append(artist_insert)
+
+        return artist_list
 
     def mark_as_uploaded(self, artist):
         """
         Mark an artist as uploaded
         """
         self.artists[artist]["uploaded"] = True
+
+    def set_mbid(self, artist, mbid):
+        """
+        Update the musicbrainz id of an artist
+
+        :param artist: artist name
+        :param mbid: Musicbrainz id
+        """
+        self.artists[artist]["mbid"] = mbid
 
     def merge(self, artists):
         """
