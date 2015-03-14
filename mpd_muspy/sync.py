@@ -86,11 +86,9 @@ def process_task(artists, artists_nb, artist_db, lock, counter):
     :type artists: list
     :param artists_nb: total artists to upload. Different of len(artists), here
                        it is the total number of artists of all processes.
-    :type artists: int
+    :type artists_nb: int
     :param artist_db: database of artists, in the shared memory
     :type artist_db: SyncManager.Artist_db()
-    :param muspy_api: custom api for muspy
-    :type muspy_api: Muspy_api()
     :param lock: lock shared between the processes
     :type lock: multiprocessing.Lock
     :param counter: integer in the shared memory
