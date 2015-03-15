@@ -168,6 +168,18 @@ class Artist_db():
 
         return artist_list
 
+    def get_mbid(self, artist):
+        """
+        Get the musicbrainz id of an artist
+
+        :param artist: artist name
+        """
+        try:
+            mbid = self.artists[artist]["mbid"]
+        except KeyError:
+            mbid = None
+        return mbid
+
     def mark_as_uploaded(self, artist):
         """
         Mark an artist as uploaded

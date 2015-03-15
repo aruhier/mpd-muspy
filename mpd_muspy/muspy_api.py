@@ -148,6 +148,7 @@ class Muspy_api():
             'name': artist name,
             'sort_name':,
         }, ...]
+
         :returns artists: list of dicts
         """
         artists = self._urlopener.open(self._muspy_api_url + "artists/" +

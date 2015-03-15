@@ -69,6 +69,8 @@ def update_artists_from_muspy(artist_db):
                 ma_name = ma["name"]
                 if ma_name in non_uploaded_artists:
                     artist_db.mark_as_uploaded(ma_name)
+                if artist_db.get_mbid(ma_name) is None:
+                    artist_db.set_mbid(ma_name, ma["mbid"])
             except KeyError:
                 pass
     except IndexError:
