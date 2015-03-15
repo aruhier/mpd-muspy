@@ -5,10 +5,11 @@ import os
 import mpd
 import multiprocessing
 from multiprocessing.managers import BaseManager
-from .muspy_api import Muspy_api
-from .artist_db import Artist_db
 from . import _current_dir
-from config import ARTISTS_JSON, SERVER, PORT
+from .artist_db import Artist_db
+from .muspy_api import Muspy_api
+from .tools import chunks, mpd_get_artists
+from config import ARTISTS_JSON
 
 ARTISTS_JSON = os.path.join(_current_dir, ARTISTS_JSON)
 # After multiple tests, it appears that this value is the best compromise to
@@ -21,35 +22,6 @@ class SyncManager(BaseManager):
 
 SyncManager.register('Artist_db', Artist_db)
 SyncManager.register('Muspy_api', Muspy_api)
-
-
-def chunks(l, n):
-    """
-    Yield successive n-sized chunks from l.
-
-    :param l: list to split
-    :param n: number of elements wanted in each list split
-    """
-    for i in range(0, len(l), n):
-        yield l[i:i+n]
-
-
-def mpd_get_artists(mpdclient):
-    """
-    Get artists from MPD
-
-    :param mpdclient: connection with MPD
-    :type mpdclient: mpd.MPDClient()
-    """
-    mpdclient.connect(SERVER, PORT)
-    try:
-        artists = set(str(artist).lower()
-                      for artist in mpdclient.list("artist") if len(artist))
-    except mpd.ConnectionError:
-        mpdclient.connect(SERVER, PORT)
-        artists = set(str(artist).lower()
-                      for artist in mpdclient.list("artist") if len(artist))
-    return artists
 
 
 def update_artists_from_muspy(artist_db):
@@ -140,12 +112,8 @@ def start_pool(non_uploaded_artists, artist_db):
     pool.join()
 
 
-def run():
-    process_manager = SyncManager()
-    process_manager.start()
-    artist_db = process_manager.Artist_db(jsonpath=ARTISTS_JSON)
+def pre_sync(artist_db):
     mpdclient = mpd.MPDClient()
-
     print("Get mpd artists...")
     artists = mpd_get_artists(mpdclient)
     artists_removed, artists_added = artist_db.merge(artists)
@@ -154,15 +122,23 @@ def run():
     print("Pre-synchronization with muspy...")
     update_artists_from_muspy(artist_db)
     artist_db.save()
-    non_uploaded_artists = artist_db.get_artists(uploaded=False)
-    artists = None
 
+    non_uploaded_artists = artist_db.get_artists(uploaded=False)
     print()
     print(len(non_uploaded_artists), "artist(s) non uploaded on muspy")
     print(len(artists_added), "artist(s) added")
     print(len(artists_removed), "artist(s) removed")
 
-    print("\n   Start syncing  \n =================\n")
+    return non_uploaded_artists
+
+
+def run():
+    process_manager = SyncManager()
+    process_manager.start()
+    artist_db = process_manager.Artist_db(jsonpath=ARTISTS_JSON)
+    non_uploaded_artists = pre_sync(artist_db)
+
+    print("\n   Start syncing\n =================\n")
     start_pool(non_uploaded_artists, artist_db)
     print("Done: ",
           len(non_uploaded_artists) -
