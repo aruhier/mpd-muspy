@@ -186,6 +186,12 @@ class Artist_db():
         """
         self.artists[artist]["uploaded"] = True
 
+    def mark_as_non_uploaded(self, artist):
+        """
+        Mark an artist as non uploaded
+        """
+        self.artists[artist]["uploaded"] = False
+
     def set_mbid(self, artist, mbid):
         """
         Update the musicbrainz id of an artist

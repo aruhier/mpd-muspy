@@ -8,46 +8,19 @@ from multiprocessing.managers import BaseManager
 from . import _current_dir
 from .artist_db import Artist_db
 from .muspy_api import Muspy_api
-from .tools import chunks, mpd_get_artists
+from .presync import presync
+from .tools import chunks
 from config import ARTISTS_JSON
 
 ARTISTS_JSON = os.path.join(_current_dir, ARTISTS_JSON)
-# After multiple tests, it appears that this value is the best compromise to
-# avoid HTTP error 400 with the musicbrainz api
-NB_MULTIPROCESS = 3
+NB_MULTIPROCESS = 5
 
 
 class SyncManager(BaseManager):
     pass
 
 SyncManager.register('Artist_db', Artist_db)
-SyncManager.register('Muspy_api', Muspy_api)
-
-
-def update_artists_from_muspy(artist_db):
-    """
-    Update the uploaded state of artists from the ones already on the muspy
-    account.
-
-    :param artist_db: database of local artists
-    """
-    local_artists = artist_db.get_artists(group_by="uploaded")
-    mapi = Muspy_api()
-    muspy_artists = mapi.get_artists()
-    try:
-        non_uploaded_artists = local_artists[False]
-        for ma in muspy_artists:
-            try:
-                ma_name = ma["name"]
-                if ma_name in non_uploaded_artists:
-                    artist_db.mark_as_uploaded(ma_name)
-                if artist_db.get_mbid(ma_name) is None:
-                    artist_db.set_mbid(ma_name, ma["mbid"])
-            except KeyError:
-                pass
-    except IndexError:
-        pass
-    artist_db.save()
+SyncManager.register('MPDClient', mpd.MPDClient)
 
 
 def process_task(artists, artists_nb, artist_db, lock, counter):
@@ -72,17 +45,21 @@ def process_task(artists, artists_nb, artist_db, lock, counter):
     for artist in artists:
         error = ""
         try:
-            muspy_api.add_artist(artist)
-            with lock:
-                artist_db.mark_as_uploaded(artist)
-                artist_db.save()
+            if "mbid" in artist.keys():
+                muspy_api.add_artist_mbid(artist["mbid"])
+                with lock:
+                    artist_db.mark_as_uploaded(artist["name"])
+                    artist_db.save()
+            else:
+                error = "Doesn't have a musicbrainz ID"
         except Exception as e:
             error = "Error: " + str(e)
             pass
         finally:
             with lock:
                 counter.value += 1
-            print("[", counter.value, "/", artists_nb, "]:", artist.title())
+            print("[", counter.value, "/", artists_nb, "]:",
+                  artist["name"].title())
             if error:
                 print(error)
 
@@ -112,31 +89,12 @@ def start_pool(non_uploaded_artists, artist_db):
     pool.join()
 
 
-def pre_sync(artist_db):
-    mpdclient = mpd.MPDClient()
-    print("Get mpd artists...")
-    artists = mpd_get_artists(mpdclient)
-    artists_removed, artists_added = artist_db.merge(artists)
-
-    # Update the uploaded status of artists in the db with the muspy account
-    print("Pre-synchronization with muspy...")
-    update_artists_from_muspy(artist_db)
-    artist_db.save()
-
-    non_uploaded_artists = artist_db.get_artists(uploaded=False)
-    print()
-    print(len(non_uploaded_artists), "artist(s) non uploaded on muspy")
-    print(len(artists_added), "artist(s) added")
-    print(len(artists_removed), "artist(s) removed")
-
-    return non_uploaded_artists
-
-
 def run():
     process_manager = SyncManager()
     process_manager.start()
     artist_db = process_manager.Artist_db(jsonpath=ARTISTS_JSON)
-    non_uploaded_artists = pre_sync(artist_db)
+    mpdclient = process_manager.MPDClient()
+    non_uploaded_artists = presync(artist_db, mpdclient)
 
     print("\n   Start syncing\n =================\n")
     start_pool(non_uploaded_artists, artist_db)
@@ -144,3 +102,4 @@ def run():
           len(non_uploaded_artists) -
           len(artist_db.get_artists(uploaded=False)),
           "artist(s) updated")
+    process_manager.shutdown()
