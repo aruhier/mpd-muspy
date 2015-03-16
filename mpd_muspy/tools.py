@@ -18,8 +18,7 @@ def chunks(l, n):
     :param l: list to split
     :param n: number of elements wanted in each list split
     """
-    if n == 0:
-        return []
+    n = 1 if n <= 0 else n
     for i in range(0, len(l), n):
         yield l[i:i+n]
 
