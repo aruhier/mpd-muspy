@@ -45,7 +45,7 @@ def process_task(lst_without_mbid, artists_nb, artist_db, lock, counter,
                     mbid = ma["mbid"]
                     break
             if mbid is None:
-                mbid = get_mbid(ma["name"], mpdclient)
+                mbid = get_mbid(artist, mpdclient)
             if mbid is not None:
                 with lock:
                     artist_db.set_mbid(artist, mbid)
