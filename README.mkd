@@ -23,6 +23,7 @@ Dependencies
   * python 3.4 (it certainly works with prior versions, just not tested)
   * python-mpd2
   * python-musicbrainzngs
+  * python-urllib3
 
 
 Configuration
