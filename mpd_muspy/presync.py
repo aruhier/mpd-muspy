@@ -120,7 +120,7 @@ def update_artists_from_muspy(artist_db, muspy_artists):
 def presync(artist_db, mpdclient):
     print("Get mpd artists...")
     artists = mpd_get_artists(mpdclient)
-    artists_removed, artists_added = artist_db.merge(artists)
+    artists_added, artists_removed = artist_db.merge(artists)
 
     mapi = Muspy_api()
     muspy_artists = mapi.get_artists()
