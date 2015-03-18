@@ -11,7 +11,7 @@ NB_MULTIPROCESS = 3
 
 
 def process_task(lst_without_mbid, artists_nb, artist_db, lock, counter,
-                 muspy_artists, mpdclient):
+                 error_nb, muspy_artists, mpdclient):
     """
     Function launched by each process
 
@@ -52,7 +52,8 @@ def process_task(lst_without_mbid, artists_nb, artist_db, lock, counter,
                     artist_db.save()
         except Exception as e:
             error = "Error: " + str(e)
-            pass
+            with lock:
+                error_nb.value += 1
         finally:
             with lock:
                 counter.value += 1
@@ -79,6 +80,7 @@ def fetch_missing_mbid(artist_db, muspy_artists, mpdclient):
 
     manager = multiprocessing.Manager()
     lock = manager.Lock()
+    error = manager.Value("i", 0)
     counter = manager.Value("i", 0)
     artists_nb = len(lst_without_mbid)
     artists_nb_by_split = int(artists_nb / NB_MULTIPROCESS)
@@ -89,11 +91,12 @@ def fetch_missing_mbid(artist_db, muspy_artists, mpdclient):
             process_task,
             kwds={"lst_without_mbid": l,
                   "artists_nb": artists_nb, "artist_db": artist_db,
-                  "lock": lock, "counter": counter,
+                  "lock": lock, "counter": counter, "error_nb": error,
                   "muspy_artists": muspy_artists, "mpdclient": mpdclient}
         )
     pool.close()
     pool.join()
+    return error.value
 
 
 def update_artists_from_muspy(artist_db, muspy_artists):
@@ -126,8 +129,12 @@ def presync(artist_db, mpdclient):
     muspy_artists = mapi.get_artists()
 
     print("Fetch the missing musicbrainz ids...")
-    fetch_missing_mbid(artist_db, muspy_artists, mpdclient)
-    print("Done\n")
+    error = fetch_missing_mbid(artist_db, muspy_artists, mpdclient)
+    print()
+    if error:
+        print("Done with", error, "error(s)\n")
+    else:
+        print("Done\n")
 
     # Update the uploaded status of artists in the db with the muspy account
     print("Pre-synchronization with muspy...")

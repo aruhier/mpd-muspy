@@ -23,7 +23,7 @@ SyncManager.register('Artist_db', Artist_db)
 SyncManager.register('MPDClient', mpd.MPDClient)
 
 
-def process_task(artists, artists_nb, artist_db, lock, counter):
+def process_task(artists, artists_nb, artist_db, lock, error_nb, counter):
     """
     Function launched by each process
 
@@ -52,9 +52,12 @@ def process_task(artists, artists_nb, artist_db, lock, counter):
                     artist_db.save()
             else:
                 error = "Doesn't have a musicbrainz ID"
+                with lock:
+                    error_nb.value += 1
         except Exception as e:
             error = "Error: " + str(e)
-            pass
+            with lock:
+                error_nb.value += 1
         finally:
             with lock:
                 counter.value += 1
@@ -75,18 +78,22 @@ def start_pool(non_uploaded_artists, artist_db):
     """
     manager = multiprocessing.Manager()
     lock = manager.Lock()
+    error = manager.Value("i", 0)
     counter = manager.Value("i", 0)
     artists_nb = len(non_uploaded_artists)
     artists_nb_by_split = int(artists_nb / NB_MULTIPROCESS)
     pool = multiprocessing.Pool()
+
     for l in chunks(non_uploaded_artists, artists_nb_by_split):
         pool.apply_async(
             process_task,
             kwds={"artists": l, "artists_nb": artists_nb,
-                  "artist_db": artist_db, "lock": lock, "counter": counter}
+                  "artist_db": artist_db, "lock": lock, "error_nb": error,
+                  "counter": counter}
         )
     pool.close()
     pool.join()
+    return error.value
 
 
 def run():
@@ -97,9 +104,13 @@ def run():
     non_uploaded_artists = presync(artist_db, mpdclient)
 
     print("\n   Start syncing\n =================\n")
-    start_pool(non_uploaded_artists, artist_db)
-    print("Done: ",
-          len(non_uploaded_artists) -
-          len(artist_db.get_artists(uploaded=False)),
-          "artist(s) updated")
+    error = start_pool(non_uploaded_artists, artist_db)
+    msg = ("Done: " +
+           str(len(non_uploaded_artists) -
+               len(artist_db.get_artists(uploaded=False))) +
+           " artist(s) updated")
+    if error:
+        msg += " with " + str(error) + " errors"
+    print()
+    print(msg)
     process_manager.shutdown()
