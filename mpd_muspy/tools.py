@@ -23,6 +23,21 @@ def chunks(l, n):
         yield l[i:i+n]
 
 
+def del_chars_from_string(s, chars_to_del):
+    """
+    Delete characters from list
+
+    :param s: string to clean
+    :param chars_to_del: characters to delete in string
+    """
+    if type(chars_to_del) != "str":
+        for c in chars_to_del:
+            s = s.replace(c, "")
+    else:
+        s = s.replace(chars_to_del, "")
+    return s
+
+
 def mpd_get_artists(mpdclient):
     """
     Get artists from MPD
@@ -71,8 +86,11 @@ def get_mbid(artist, mpdclient):
 
     :param artist: artist name to get the id
     """
+    ignore_chars = ["/", "\\", "!", "?"]
     LIMIT_NB_ARTIST = 15
-    result = musicbrainzngs.search_artists(artist, LIMIT_NB_ARTIST)
+    result = musicbrainzngs.search_artists(
+        del_chars_from_list(artist, ignore_chars),
+        LIMIT_NB_ARTIST)
     if result["artist-count"] == 0:
         raise ArtistNotFoundException("Artist not found")
     artists_prop = [a["id"] for a in result["artist-list"]]
@@ -87,7 +105,8 @@ def get_mbid(artist, mpdclient):
     for album in albums:
         try:
             result = musicbrainzngs.search_releases(
-                album, limit=LIMIT_NB_ALBUM)["release-list"]
+                del_chars_from_list(album, ignore_chars),
+                limit=LIMIT_NB_ALBUM)["release-list"]
             for i in result:
                 artist_id = i["artist-credit"][0]["artist"]["id"]
                 if artist_id in artists_prop:
