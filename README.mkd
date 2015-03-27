@@ -48,8 +48,23 @@ makes the synchronisation a bit longer.
 For the next synchronisations, it uses the `artists.json` file to know which
 artists were added on MuSpy and which were not.
 
+Before every synchronisations, it also fetch all artists of the MuSpy account
+to update the uploaded state locally. This pre-synchronisation permits to
+get the missing MusicBrainz ids from the artists already added on MuSpy, which
+is a lot quicker than querying it directly to MusicBrainz.
+
 For the moment, MPD Music Spy only add new artists, it does not remove on MuSpy
 the ones deleted in MPD.
+
+
+Ignore artists
+--------------
+
+If you do not want to synchronize a or multiple specific artist(s) with MuSpy,
+you can add the names in the file `ignore_list`.
+
+It is one name per line, and put the exact same name as it is saved in mpd (but
+it is not case sensitive) or the ignore rule could not work as expected.
 
 
 License

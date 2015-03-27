@@ -3,11 +3,15 @@
 
 import json
 import os
+from . import _current_dir
+
+IGNORE_LIST_PATH = os.path.join(_current_dir, "ignore_list")
 
 
 class Artist_db():
     def __init__(self, jsonpath=None, artists={}):
         self.artists = artists
+        self.ignore_list = []
         self.jsonpath = jsonpath
         if jsonpath is not None:
             try:
@@ -17,6 +21,7 @@ class Artist_db():
             except Exception as e:
                 print(e)
                 pass
+        self._fill_ignore_list()
 
     def _diff_artists(self, artists):
         """
@@ -43,6 +48,24 @@ class Artist_db():
         except StopIteration:
             fields = []
         return fields
+
+    def _fill_ignore_list(self):
+        """
+        Read the ignore list file, where are indicated all artists the user
+        doesn't want to synchronize.
+        """
+        try:
+            with open(IGNORE_LIST_PATH, "r") as ignore_list:
+                self.ignore_list = [
+                    artist.replace("\n", "").lower()
+                    for artist in ignore_list.readlines()
+                ]
+        except FileNotFoundError:
+            pass
+        except Exception as e:
+            print("Error: ", e)
+            print()
+            print("Error when importing the ignore list. Pass...")
 
     def load(self):
         """
@@ -148,6 +171,12 @@ class Artist_db():
         """
         artists = self.artists
 
+        for ignore_artist in self.ignore_list:
+            try:
+                artists.pop(ignore_artist)
+            except KeyError:
+                continue
+
         if uploaded is not None:
             artists = {artist: val for artist, val in self.artists.items()
                        if val["uploaded"] == uploaded}
@@ -214,7 +243,9 @@ class Artist_db():
         added = []
         removed = []
         for a in a_diff:
-            if a in self.artists:
+            if a in self.ignore_list:
+                continue
+            elif a in self.artists:
                 self.remove(a)
                 removed.append(a)
             else:
