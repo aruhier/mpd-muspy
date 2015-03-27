@@ -89,7 +89,7 @@ def get_mbid(artist, mpdclient):
     ignore_chars = ["/", "\\", "!", "?"]
     LIMIT_NB_ARTIST = 15
     result = musicbrainzngs.search_artists(
-        del_chars_from_list(artist, ignore_chars),
+        del_chars_from_string(artist, ignore_chars),
         LIMIT_NB_ARTIST)
     if result["artist-count"] == 0:
         raise ArtistNotFoundException("Artist not found")
@@ -105,7 +105,7 @@ def get_mbid(artist, mpdclient):
     for album in albums:
         try:
             result = musicbrainzngs.search_releases(
-                del_chars_from_list(album, ignore_chars),
+                del_chars_from_string(album, ignore_chars),
                 limit=LIMIT_NB_ALBUM)["release-list"]
             for i in result:
                 artist_id = i["artist-credit"][0]["artist"]["id"]
