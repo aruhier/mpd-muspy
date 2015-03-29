@@ -9,13 +9,14 @@ IGNORE_LIST_PATH = os.path.join(_current_dir, "ignore_list")
 
 
 class Artist_db():
-    def __init__(self, jsonpath=None, artists={}):
-        self.artists = artists
+    def __init__(self, jsonpath=None, artists=None):
+        self._artists = artists if artists is not None else {}
         self.ignore_list = []
         self.jsonpath = jsonpath
         if jsonpath is not None:
             try:
-                self.load()
+                if artists is None:
+                    self.load()
             except FileNotFoundError:
                 pass
             except Exception as e:
@@ -25,14 +26,14 @@ class Artist_db():
 
     def _diff_artists(self, artists):
         """
-        Compare keys of self.artists with artists
+        Compare keys of self._artists with artists
 
         :param artists: list of artists to compare with
         :type artists: list
-        :returns keys: list of artists differents between self.artists and
+        :returns keys: list of artists differents between self._artists and
             artists
         """
-        db_keys = set(self.artists.keys())
+        db_keys = set(self._artists.keys())
         set_artists = set(artists)
         return db_keys.difference(set_artists).symmetric_difference(
             set_artists.difference(db_keys))
@@ -44,7 +45,7 @@ class Artist_db():
         :returns fields
         """
         try:
-            fields = list(next(iter(self.artists.values())).keys())
+            fields = list(next(iter(self._artists.values())).keys())
         except StopIteration:
             fields = []
         return fields
@@ -72,7 +73,7 @@ class Artist_db():
         Refresh the artists list from the json file
         """
         with open(self.jsonpath, "r") as f:
-            self.artists = json.load(f)
+            self._artists = json.load(f)
 
     def save(self):
         """
@@ -82,7 +83,7 @@ class Artist_db():
         fmode = "a" if new_db else "w"
         try:
             with open(self.jsonpath, fmode) as f:
-                json.dump(self.artists, f, indent=4)
+                json.dump(self._artists, f, indent=4)
         except Exception as e:
             print("Error when saving the database")
             print(e)
@@ -102,8 +103,8 @@ class Artist_db():
             except:
                 pass
 
-        if artists not in self.artists.keys():
-            self.artists[str(artists)] = {"uploaded": False, }
+        if artists not in self._artists.keys():
+            self._artists[str(artists)] = {"uploaded": False, }
 
     def remove(self, artists):
         """
@@ -120,8 +121,8 @@ class Artist_db():
             except:
                 pass
 
-        if artists in self.artists.keys:
-            self.artists.pop(artists)
+        if artists in self._artists.keys:
+            self._artists.pop(artists)
 
     def _artists_grouped_by(self, artists, group_by, fields=None):
         """
@@ -139,9 +140,9 @@ class Artist_db():
             if fields is None:
                 artist_insert = artist
             else:
-                artist_insert = {field: self.artists[artist][field]
+                artist_insert = {field: self._artists[artist][field]
                                  for field in fields if field in
-                                 self.artists[artist].keys()}
+                                 self._artists[artist].keys()}
                 artist_insert["name"] = artist
 
             if val[group_by] in artists_grouped.keys():
@@ -169,7 +170,7 @@ class Artist_db():
         :type group_by: str
         :returns artists
         """
-        artists = self.artists
+        artists = self._artists
 
         for ignore_artist in self.ignore_list:
             try:
@@ -178,7 +179,7 @@ class Artist_db():
                 continue
 
         if uploaded is not None:
-            artists = {artist: val for artist, val in self.artists.items()
+            artists = {artist: val for artist, val in self._artists.items()
                        if val["uploaded"] == uploaded}
 
         if group_by is not None and group_by in self._get_fields():
@@ -189,9 +190,9 @@ class Artist_db():
         else:
             artist_list = []
             for artist in artists:
-                artist_insert = {field: self.artists[artist][field]
+                artist_insert = {field: self._artists[artist][field]
                                  for field in fields if field in
-                                 self.artists[artist].keys()}
+                                 self._artists[artist].keys()}
                 artist_insert["name"] = artist
                 artist_list.append(artist_insert)
 
@@ -204,7 +205,7 @@ class Artist_db():
         :param artist: artist name
         """
         try:
-            mbid = self.artists[artist]["mbid"]
+            mbid = self._artists[artist]["mbid"]
         except KeyError:
             mbid = None
         return mbid
@@ -213,13 +214,13 @@ class Artist_db():
         """
         Mark an artist as uploaded
         """
-        self.artists[artist]["uploaded"] = True
+        self._artists[artist]["uploaded"] = True
 
     def mark_as_non_uploaded(self, artist):
         """
         Mark an artist as non uploaded
         """
-        self.artists[artist]["uploaded"] = False
+        self._artists[artist]["uploaded"] = False
 
     def set_mbid(self, artist, mbid):
         """
@@ -228,7 +229,7 @@ class Artist_db():
         :param artist: artist name
         :param mbid: Musicbrainz id
         """
-        self.artists[artist]["mbid"] = mbid
+        self._artists[artist]["mbid"] = mbid
 
     def merge(self, artists):
         """
@@ -245,7 +246,7 @@ class Artist_db():
         for a in a_diff:
             if a in self.ignore_list:
                 continue
-            elif a in self.artists:
+            elif a in self._artists:
                 self.remove(a)
                 removed.append(a)
             else:

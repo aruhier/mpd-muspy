@@ -96,10 +96,23 @@ def start_pool(non_uploaded_artists, artist_db):
     return error.value
 
 
-def run():
+def run(clean=False):
+    """
+    Run synchronization. If clean parameter is specified, remove everything in
+    the current database, to start on a clean one.
+
+    :param clean: boolean about if starting a clean synchronization (drop the
+        db) or not.
+    :type clean: boolean
+    """
     process_manager = SyncManager()
     process_manager.start()
-    artist_db = process_manager.Artist_db(jsonpath=ARTISTS_JSON)
+    if clean:
+        artist_db = process_manager.Artist_db(
+            jsonpath=ARTISTS_JSON, artists={})
+        artist_db.save()
+    else:
+        artist_db = process_manager.Artist_db(jsonpath=ARTISTS_JSON)
     mpdclient = process_manager.MPDClient()
     non_uploaded_artists = presync(artist_db, mpdclient)
 
