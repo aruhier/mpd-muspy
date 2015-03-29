@@ -57,10 +57,10 @@ class Artist_db():
         """
         try:
             with open(IGNORE_LIST_PATH, "r") as ignore_list:
-                self.ignore_list = [
+                self.ignore_list = set([
                     artist.replace("\n", "").lower()
                     for artist in ignore_list.readlines()
-                ]
+                ])
         except FileNotFoundError:
             pass
         except Exception as e:
