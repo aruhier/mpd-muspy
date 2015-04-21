@@ -15,6 +15,10 @@ ARTISTS_JSON = "artists.json"
 
 # Change this variable if you use a self-hosted muspy instance
 MUSPY_ADDR = "https://muspy.com/api/1/"
+# Change it to 'True' if you use a self-hosted muspy instance with a
+# self-signed SSL certificate
+MUSPY_FORCE_SSL_ACCEPT = False
+
 # Muspy account
 MUSPY_USERNAME = "username"
 MUSPY_PASSWORD = "password"

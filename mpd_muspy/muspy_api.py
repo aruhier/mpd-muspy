@@ -2,9 +2,9 @@
 # Author: Anthony Ruhier
 
 import mpd
-import json
-import urllib.error
+import requests
 import urllib.request
+import config
 from config import MUSPY_ADDR, MUSPY_USERNAME, MUSPY_PASSWORD, MUSPY_ID
 from .exceptions import ArtistNotFoundException
 from .tools import get_mbid
@@ -35,20 +35,12 @@ class Muspy_api():
         self.password = password
         self.user_id = user_id
         self._mpdclient = mpd.MPDClient()
-        self._setup_auth_url()
-
-    def _setup_auth_url(self):
-        """
-        Install a custom opener with authentication to muspy.
-
-        Setup the HTTPPasswordMgrWithDefaultRealm to the MUSPY_API_URL
-        """
-        auth_handler = urllib.request.HTTPBasicAuthHandler()
-        auth_handler.passwd = urllib.request.HTTPPasswordMgrWithDefaultRealm()
-        auth_handler.passwd.add_password(
-            None, self._muspy_api_url, MUSPY_USERNAME, MUSPY_PASSWORD
-        )
-        self._urlopener = urllib.request.build_opener(auth_handler)
+        try:
+            self._ssl_verify = not config.MUSPY_FORCE_SSL_ACCEPT
+            if not self._ssl_verify:
+                requests.packages.urllib3.disable_warnings()
+        except:
+            self._ssl_verify = True
 
     def add_artist_mbid(self, mbid):
         """
@@ -56,15 +48,16 @@ class Muspy_api():
 
         :param mbid: MusicBrainz id of the artist
         """
-        request = urllib.request.Request(
-            url=urllib.request.urljoin(
-                self._muspy_api_url,
-                "artists/" + self.user_id + "/" + str(mbid)),
-        )
-        request.get_method = lambda: 'PUT'
         try:
-            self._urlopener.open(request)
-        except urllib.error.HTTPError:
+            requests.put(
+                urllib.request.urljoin(
+                    self._muspy_api_url,
+                    "artists/" + self.user_id + "/" + str(mbid)
+                ),
+                auth=(MUSPY_USERNAME, MUSPY_PASSWORD),
+                verify=self._ssl_verify,
+            )
+        except requests.HTTPError:
             raise ArtistNotFoundException("Artist not found")
 
     def add_artist(self, artist):
@@ -88,7 +81,13 @@ class Muspy_api():
 
         :returns artists: list of dicts
         """
-        artists = self._urlopener.open(self._muspy_api_url + "artists/" +
-                                       self.user_id)
+        r = requests.get(
+            urllib.request.urljoin(
+                self._muspy_api_url,
+                "artists/" + self.user_id
+            ),
+            auth=(MUSPY_USERNAME, MUSPY_PASSWORD),
+            verify=self._ssl_verify,
+        )
         return [{"name": a["name"].lower(), "mbid": a["mbid"]}
-                for a in json.loads(artists.readall().decode())]
+                for a in r.json()]
