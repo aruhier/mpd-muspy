@@ -7,7 +7,7 @@ from mpd_muspy.sync import run as run_sync
 
 
 def usage():
-    print("MPD MuSpy beta", _version)
+    print("MPD MuSpy", _version)
     print("Synchronize artists on your MuSpy account from the ones in your "
           "MPD database.\n")
     print("sync.py [options]")
