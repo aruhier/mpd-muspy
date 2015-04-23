@@ -1,5 +1,5 @@
-MPD Music Spy (beta)
-====================
+MPD Music Spy
+=============
 
 Tool to synchronize artists of a MPD database with [Muspy](https://muspy.com).
 
