@@ -1,0 +1,4 @@
+python-mpd2
+musicbrainzngs
+requests
+urllib3
