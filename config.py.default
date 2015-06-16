@@ -6,6 +6,10 @@ SERVER = "localhost"
 # MPD server port
 PORT = 6600
 
+# Use the "albumartist" field in mpd tags instead of "artist"
+# Set it to True to enable
+USE_ALBUMARTIST = False
+
 # Artist database name (should use default value)
 ARTISTS_JSON = "artists.json"
 

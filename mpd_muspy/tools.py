@@ -7,6 +7,10 @@ from . import _release_name, _version
 from config import SERVER, PORT
 from .exceptions import ArtistNotFoundException
 
+try:
+    from config import USE_ALBUMARTIST
+except:
+    USE_ALBUMARTIST = False
 
 musicbrainzngs.set_useragent(_release_name, _version)
 
@@ -46,13 +50,14 @@ def mpd_get_artists(mpdclient):
     :type mpdclient: mpd.MPDClient()
     """
     mpdclient.connect(SERVER, PORT)
+    tag_field = "albumartist" if USE_ALBUMARTIST else "artist"
     try:
         artists = set(str(artist).lower()
-                      for artist in mpdclient.list("artist") if len(artist))
+                      for artist in mpdclient.list(tag_field) if len(artist))
     except mpd.ConnectionError:
         mpdclient.connect(SERVER, PORT)
         artists = set(str(artist).lower()
-                      for artist in mpdclient.list("artist") if len(artist))
+                      for artist in mpdclient.list(tag_field) if len(artist))
     return artists
 
 
@@ -70,11 +75,12 @@ def get_mpd_albums(artist, mpdclient):
         mpdclient.connect(SERVER, PORT)
     # The mpd module is using case sensitive filters in list(). Artist has to
     # be spelled correctly
+    tag_field = "albumartist" if USE_ALBUMARTIST else "artist"
     try:
-        artist_cs = mpdclient.search("artist", artist)[0]["artist"]
+        artist_cs = mpdclient.search(tag_field, artist)[0]["artist"]
     except IndexError:
         raise ArtistNotFoundException("Artist is not in the mpd database")
-    return mpdclient.list("album", "artist", artist_cs)
+    return mpdclient.list("album", tag_field, artist_cs)
 
 
 def get_mbid(artist, mpdclient):
