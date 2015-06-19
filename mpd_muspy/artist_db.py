@@ -210,6 +210,14 @@ class Artist_db():
             mbid = None
         return mbid
 
+    def is_ignored(self, artist):
+        """
+        Check if artist is ignored or not
+
+        :param artist: artist name
+        """
+        return artist.lower() in self.ignore_list
+
     def mark_as_uploaded(self, artist):
         """
         Mark an artist as uploaded

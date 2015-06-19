@@ -5,6 +5,11 @@ import multiprocessing
 from .muspy_api import Muspy_api
 from .tools import chunks, get_mbid, mpd_get_artists
 
+try:
+    from config import FULLSYNC
+except:
+    FULLSYNC = False
+
 # After multiple tests, it appears that this value is the best compromise to
 # avoid HTTP error 400 with the musicbrainz api
 NB_MULTIPROCESS = 3
@@ -106,11 +111,16 @@ def update_artists_from_muspy(artist_db, muspy_artists):
 
     :param artist_db: database of local artists
     :param muspy_artists: list of artists already on the muspy account
+    :return remove_of_muspy: list of artists that should be removed of muspy to
+                             get a full synchronisation with the local mpd
     """
     local_artists = artist_db.get_artists(fields=("mbid", "uploaded",))
-    muspy_mbid_list = [ma["mbid"] for ma in muspy_artists]
+    muspy_mbid_list = {ma["mbid"] for ma in muspy_artists}
+    # usefull for fullsync
+    uniq_local_artists = set()
     for la in local_artists:
         try:
+            uniq_local_artists.add(la["mbid"])
             if la["mbid"] in muspy_mbid_list and la["uploaded"] is False:
                 artist_db.mark_as_uploaded(la["name"])
             elif la["mbid"] not in muspy_mbid_list and la["uploaded"] is True:
@@ -118,6 +128,14 @@ def update_artists_from_muspy(artist_db, muspy_artists):
         except KeyError:
             pass
     artist_db.save()
+    if FULLSYNC:
+        remove_of_muspy = muspy_mbid_list.difference(uniq_local_artists)
+        remove_of_muspy = [(ma["name"], ma["mbid"]) for ma in muspy_artists
+                           if ma["mbid"] in remove_of_muspy and
+                           not artist_db.is_ignored(ma["name"])]
+    else:
+        remove_of_muspy = []
+    return remove_of_muspy
 
 
 def presync(artist_db, mpdclient):
@@ -138,7 +156,7 @@ def presync(artist_db, mpdclient):
 
     # Update the uploaded status of artists in the db with the muspy account
     print("Pre-synchronization with muspy...")
-    update_artists_from_muspy(artist_db, muspy_artists)
+    remove_of_muspy = update_artists_from_muspy(artist_db, muspy_artists)
     artist_db.save()
 
     non_uploaded_artists = artist_db.get_artists(fields=("mbid",),
@@ -148,4 +166,4 @@ def presync(artist_db, mpdclient):
     print(len(artists_added), "artist(s) added")
     print(len(artists_removed), "artist(s) removed")
 
-    return non_uploaded_artists
+    return non_uploaded_artists, remove_of_muspy

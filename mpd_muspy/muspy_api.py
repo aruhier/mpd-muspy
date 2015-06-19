@@ -60,6 +60,27 @@ class Muspy_api():
         except requests.HTTPError:
             raise ArtistNotFoundException("Artist not found")
 
+
+    def del_artist_mbid(self, mbid):
+        """
+        Delete artist by its MusicBrainz id of the muspy account
+
+        :param mbid: MusicBrainz id of the artist
+        """
+        try:
+            requests.delete(
+                urllib.request.urljoin(
+                    self._muspy_api_url,
+                    "artists/" + self.user_id + "/" + str(mbid)
+                ),
+                auth=(MUSPY_USERNAME, MUSPY_PASSWORD),
+                verify=self._ssl_verify,
+            )
+        except requests.HTTPError:
+            raise ArtistNotFoundException(
+                "Artist is not indexed in the Muspy account"
+            )
+
     def add_artist(self, artist):
         """
         Add artist by its name to the muspy account
@@ -67,6 +88,14 @@ class Muspy_api():
         :param artist: Artist name to add
         """
         return self.add_artist_mbid(get_mbid(artist, self._mpdclient))
+
+    def del_artist(self, artist):
+        """
+        Delete artist by its name from the muspy account
+
+        :param artist: Artist name to add
+        """
+        return self.del_artist_mbid(get_mbid(artist, self._mpdclient))
 
     def get_artists(self):
         """
