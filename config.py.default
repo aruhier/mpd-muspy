@@ -12,7 +12,7 @@ USE_ALBUMARTIST = False
 
 # Full synchronization with MuSpy: remove of the MuSpy account all artists who
 # do not exist in MPD anymore
-FULLSYNC = True
+FULLSYNC = False
 
 # Artist database name (should use default value)
 ARTISTS_JSON = "artists.json"
