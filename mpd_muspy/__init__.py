@@ -15,5 +15,5 @@ if not os.path.exists(os.path.join(_current_dir, "config.py")):
           "config.py.default as config.py.", file=sys.stderr)
     sys.exit(1)
 
-_version = "0.1.3"
+_version = "0.2.0"
 _release_name = "mpd_muspy"
