@@ -125,7 +125,7 @@ class Artist_db():
             except:
                 pass
 
-        if artists in self._artists.keys:
+        if artists in self._artists.keys():
             self._artists.pop(artists)
 
     def _artists_grouped_by(self, artists, group_by, fields=None):
