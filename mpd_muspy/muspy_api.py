@@ -60,7 +60,6 @@ class Muspy_api():
         except requests.HTTPError:
             raise ArtistNotFoundException("Artist not found")
 
-
     def del_artist_mbid(self, mbid):
         """
         Delete artist by its MusicBrainz id of the muspy account

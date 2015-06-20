@@ -121,15 +121,20 @@ def start_pool_del(remove_of_muspy):
     artists_nb_by_split = int(artists_nb / NB_MULTIPROCESS)
     pool = multiprocessing.Pool()
 
-    for l in chunks(remove_of_muspy, artists_nb_by_split):
-        pool.apply_async(
-            process_del_artists,
-            kwds={"artists": l, "artists_nb": artists_nb,
-                  "lock": lock, "error_nb": error,
-                  "counter": counter}
-        )
-    pool.close()
-    pool.join()
+    try:
+        for l in chunks(remove_of_muspy, artists_nb_by_split):
+            pool.apply_async(
+                process_del_artists,
+                kwds={"artists": l, "artists_nb": artists_nb,
+                      "lock": lock, "error_nb": error,
+                      "counter": counter}
+            )
+        pool.close()
+    except Exception as e:
+        pool.terminate()
+        raise e
+    finally:
+        pool.join()
     return error.value
 
 
@@ -150,15 +155,20 @@ def start_pool_add(non_uploaded_artists, artist_db):
     artists_nb_by_split = int(artists_nb / NB_MULTIPROCESS)
     pool = multiprocessing.Pool()
 
-    for l in chunks(non_uploaded_artists, artists_nb_by_split):
-        pool.apply_async(
-            process_add_artists,
-            kwds={"artists": l, "artists_nb": artists_nb,
-                  "artist_db": artist_db, "lock": lock, "error_nb": error,
-                  "counter": counter}
-        )
-    pool.close()
-    pool.join()
+    try:
+        for l in chunks(non_uploaded_artists, artists_nb_by_split):
+            pool.apply_async(
+                process_add_artists,
+                kwds={"artists": l, "artists_nb": artists_nb,
+                      "artist_db": artist_db, "lock": lock, "error_nb": error,
+                      "counter": counter}
+            )
+        pool.close()
+        pool.join()
+    except Exception as e:
+        pool.terminate()
+        pool.join()
+        raise e
     return error.value
 
 
@@ -180,10 +190,15 @@ def run(clean=False):
     else:
         artist_db = process_manager.Artist_db(jsonpath=ARTISTS_JSON)
     mpdclient = process_manager.MPDClient()
-    non_uploaded_artists, remove_of_muspy = presync(artist_db, mpdclient)
+    try:
+        non_uploaded_artists, remove_of_muspy = presync(artist_db, mpdclient)
 
-    print("\n   Start syncing\n =================\n")
-    error = start_pool_add(non_uploaded_artists, artist_db)
+        print("\n   Start syncing\n =================\n")
+        error = start_pool_add(non_uploaded_artists, artist_db)
+    except Exception as e:
+        artist_db.save()
+        raise e
+
     if len(remove_of_muspy):
         print("\nRemoving of Muspy artists who do not exist in mpd "
               "anymore...\n")

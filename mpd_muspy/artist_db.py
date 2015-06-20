@@ -10,7 +10,7 @@ IGNORE_LIST_PATH = os.path.join(_current_dir, "ignore_list")
 
 class Artist_db():
     def __init__(self, jsonpath=None, artists=None):
-        self._artists = artists if artists is not None else {}
+        self._artists = artists if artists is not None else dict()
         self.ignore_list = []
         self.jsonpath = jsonpath
         if jsonpath is not None:
@@ -19,8 +19,9 @@ class Artist_db():
                     self.load()
             except FileNotFoundError:
                 pass
-            except Exception as e:
-                print(e)
+            except:
+                print("Error when importing the database, creating a fresh "
+                      "one...")
                 pass
         self._fill_ignore_list()
 
@@ -33,7 +34,10 @@ class Artist_db():
         :returns keys: list of artists differents between self._artists and
             artists
         """
-        db_keys = set(self._artists.keys())
+        try:
+            db_keys = set(self._artists.keys())
+        except:
+            db_keys = set()
         set_artists = set(artists)
         return db_keys.difference(set_artists).symmetric_difference(
             set_artists.difference(db_keys))

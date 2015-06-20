@@ -91,16 +91,21 @@ def fetch_missing_mbid(artist_db, muspy_artists, mpdclient):
     artists_nb_by_split = int(artists_nb / NB_MULTIPROCESS)
     pool = multiprocessing.Pool()
 
-    for l in chunks(lst_without_mbid, artists_nb_by_split):
-        pool.apply_async(
-            process_task,
-            kwds={"lst_without_mbid": l,
-                  "artists_nb": artists_nb, "artist_db": artist_db,
-                  "lock": lock, "counter": counter, "error_nb": error,
-                  "muspy_artists": muspy_artists, "mpdclient": mpdclient}
-        )
-    pool.close()
-    pool.join()
+    try:
+        for l in chunks(lst_without_mbid, artists_nb_by_split):
+            pool.apply_async(
+                process_task,
+                kwds={"lst_without_mbid": l,
+                      "artists_nb": artists_nb, "artist_db": artist_db,
+                      "lock": lock, "counter": counter, "error_nb": error,
+                      "muspy_artists": muspy_artists, "mpdclient": mpdclient}
+            )
+        pool.close()
+        pool.join()
+    except KeyboardInterrupt as e:
+        pool.terminate()
+        pool.join()
+        raise e
     return error.value
 
 

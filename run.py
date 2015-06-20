@@ -44,4 +44,7 @@ if __name__ == "__main__":
         print(e)
         usage()
         exit(1)
-    run_sync(**kwargs)
+    try:
+        run_sync(**kwargs)
+    except KeyboardInterrupt:
+        print("Leaving...")
