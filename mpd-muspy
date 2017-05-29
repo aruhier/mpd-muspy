@@ -1,0 +1,10 @@
+#!/usr/bin/env python3
+
+"""
+Sync MPD database with MuSpy
+"""
+
+from mpd_muspy import __main__
+
+if __name__ == "__main__":
+    __main__.parse_args()

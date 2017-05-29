@@ -1,9 +1,9 @@
 #!/usr/bin/python
 # Author: Anthony Ruhier
 
+import urllib.request
 import mpd
 import requests
-import urllib.request
 import config
 from config import MUSPY_ADDR, MUSPY_USERNAME, MUSPY_PASSWORD, MUSPY_ID
 from .exceptions import ArtistNotFoundException

@@ -1,13 +1,14 @@
 #!/usr/bin/python
 # Author: Anthony Ruhier
 
-import __main__
 import os
 import sys
 
 # Check that the configuration exists
 try:
-    _current_dir = os.path.dirname(__main__.__file__)
+    _current_dir = os.path.join(
+        os.path.dirname(os.path.realpath(__file__)), "../"
+    )
 except AttributeError:
     _current_dir = os.getcwd()
 if not os.path.exists(os.path.join(_current_dir, "config.py")):
