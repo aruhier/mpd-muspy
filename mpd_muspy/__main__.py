@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
 import argparse
-from mpd_muspy import _release_name, _version
-from mpd_muspy.sync import run as run_sync
+import os
+import sys
+from mpd_muspy import _release_name, _version, _current_dir
 
 
 def parse_args():
@@ -29,7 +30,18 @@ def parse_args():
 
 
 def sync(parsed_args):
+    check_config_exists()
+
+    from mpd_muspy.sync import run as run_sync
     return run_sync(clean=parsed_args.clean)
+
+
+def check_config_exists():
+    # Check that the configuration exists
+    if not os.path.exists(os.path.join(_current_dir, "config.py")):
+        print("Configuration file config.py not found. Please copy the "
+              "config.py.default as config.py.", file=sys.stderr)
+        sys.exit(1)
 
 
 if __name__ == "__main__":
