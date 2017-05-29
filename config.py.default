@@ -17,6 +17,8 @@ FULLSYNC = False
 # Artist database name (should use default value)
 ARTISTS_JSON = "artists.json"
 
+# Ignore all artists included into this list
+IGNORE_LIST = ["Various Artists", ]
 
 # MuSpy informations #
 ######################

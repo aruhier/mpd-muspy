@@ -5,9 +5,11 @@ import urllib.request
 import mpd
 import requests
 import config
-from config import MUSPY_ADDR, MUSPY_USERNAME, MUSPY_PASSWORD, MUSPY_ID
 from .exceptions import ArtistNotFoundException
-from .tools import get_mbid
+from .tools import get_mbid, get_config
+
+config = get_config()
+from config import MUSPY_ADDR, MUSPY_USERNAME, MUSPY_PASSWORD, MUSPY_ID
 
 
 class Muspy_api():

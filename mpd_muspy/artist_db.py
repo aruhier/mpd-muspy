@@ -1,17 +1,17 @@
-#!/usr/bin/python
-# Author: Anthony Ruhier
 
+import appdirs
 import json
 import os
 from . import _current_dir
+from .tools import get_config
 
-IGNORE_LIST_PATH = os.path.join(_current_dir, "ignore_list")
+config = get_config()
 
 
 class Artist_db():
     def __init__(self, jsonpath=None, artists=None):
         self._artists = artists if artists is not None else dict()
-        self.ignore_list = []
+        self.ignore_list = config.IGNORE_LIST or tuple()
         self.jsonpath = jsonpath
         if jsonpath is not None:
             try:
@@ -23,7 +23,6 @@ class Artist_db():
                 print("Error when importing the database, creating a fresh "
                       "one...")
                 pass
-        self._fill_ignore_list()
 
     def _diff_artists(self, artists):
         """
@@ -54,24 +53,6 @@ class Artist_db():
             fields = []
         return fields
 
-    def _fill_ignore_list(self):
-        """
-        Read the ignore list file, where are indicated all artists the user
-        doesn't want to synchronize.
-        """
-        try:
-            with open(IGNORE_LIST_PATH, "r") as ignore_list:
-                self.ignore_list = set([
-                    artist.replace("\n", "").lower()
-                    for artist in ignore_list.readlines()
-                ])
-        except FileNotFoundError:
-            pass
-        except Exception as e:
-            print("Error: ", e)
-            print()
-            print("Error when importing the ignore list. Pass...")
-
     def load(self):
         """
         Refresh the artists list from the json file
@@ -86,6 +67,9 @@ class Artist_db():
         new_db = not os.path.exists(self.jsonpath)
         fmode = "a" if new_db else "w"
         try:
+            artist_db_dirname = os.path.dirname(self.jsonpath)
+            if not os.path.exists(artist_db_dirname):
+                os.makedirs(artist_db_dirname)
             with open(self.jsonpath, fmode) as f:
                 json.dump(self._artists, f, indent=4)
         except Exception as e:

@@ -21,6 +21,8 @@ the artists listed in your MPD database.
 Dependencies
 ------------
   * python 3.4 (it certainly works with prior versions, just not tested)
+  * python-appdirs
+  * python-argparse
   * python-mpd2
   * python-musicbrainzngs
   * python-requests
@@ -30,16 +32,15 @@ Dependencies
 Configuration
 -------------
 
-Copy the default configuration file `config.py.default` as `config.py`.
-<b>Please do not modify or remove `config.py.default` if you cloned this
-repository.  Always do your modifications in config.py.</b> Then modify
-`config.py` for your setup (documentation is inside).
+Copy the default configuration file `config.py.default` as
+`~/.config/mpd-muspy/config.py` or `/etc/mpd-muspy/config.py` for a system-wide
+config.
 
 
 Usage
 -----
 
-Just run: `python run.py`.
+Just run: `python3 mpd-muspy`.
 
 The synchronisation could be long the first time, as it uses MusicBrainz to get
 the artists id. A double check is done when querying the id, by using the
@@ -62,21 +63,16 @@ Ignore artists
 --------------
 
 If you do not want to synchronize a or multiple specific artist(s) with MuSpy,
-you can add the names in the file `ignore_list` at the project root. It also
-works with full synchronization: ignored artists will not be removed of MuSpy.
+you can add the names to the list `IGNORE_LIST` in the configuration file. It
+also works with full synchronization: ignored artists will not be removed of
+MuSpy.
 
-It is one name per line, and put the exact same name as it is saved in mpd (but
-it is not case sensitive) or the ignore rule could not work as expected.
-
-Example: `ignore_list`
-```
-rage against the machine
-queen
-```
+Put the exact same name as it is saved in mpd (but it is not case sensitive) or
+the ignore rule could not work as expected.
 
 
 License
 -------
 
 Tool under the BSD license. Do not hesitate to report bugs, ask me some
-questions or do some pull request if you want to !
+questions or do some pull request if you want to!

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import appdirs
 import argparse
 import os
 import sys
@@ -37,10 +38,23 @@ def sync(parsed_args):
 
 
 def check_config_exists():
-    # Check that the configuration exists
-    if not os.path.exists(os.path.join(_current_dir, "config.py")):
-        print("Configuration file config.py not found. Please copy the "
-              "config.py.default as config.py.", file=sys.stderr)
+    try:
+        from mpd_muspy.tools import get_config_path
+        get_config_path()
+    except FileNotFoundError:
+        os.environ["XDG_CONFIG_DIRS"] = "/etc"
+        print(
+            (
+                "Configuration file config.py not found. Please create a "
+                "configuration file `config.py` into one of the following "
+                "directories: {}"
+            ).format(
+                ", ".join((
+                    appdirs.user_config_dir(_release_name),
+                    appdirs.site_config_dir(_release_name)
+                ))
+            ), file=sys.stderr
+        )
         sys.exit(1)
 
 

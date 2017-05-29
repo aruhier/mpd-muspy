@@ -1,12 +1,36 @@
-#!/usr/bin/python
-# Author: Anthony Ruhier
 
+import appdirs
+from importlib.machinery import SourceFileLoader
 import mpd
 import musicbrainzngs
+import os
+
 from . import _release_name, _version
-from config import SERVER, PORT
 from .exceptions import ArtistNotFoundException
 
+
+def get_config():
+    return SourceFileLoader("config", get_config_path()).load_module()
+
+
+def get_config_path():
+    os.environ["XDG_CONFIG_DIRS"] = "/etc"
+    CONFIG_DIRS = (
+        appdirs.user_config_dir(_release_name),
+        appdirs.site_config_dir(_release_name),
+    )
+    CONFIG_FILENAME = "config.py"
+
+    for d in CONFIG_DIRS:
+        config_path = os.path.join(d, CONFIG_FILENAME)
+        if os.path.isfile(config_path):
+            return config_path
+
+    raise FileNotFoundError
+
+
+config = get_config()
+from config import SERVER, PORT
 try:
     from config import USE_ALBUMARTIST
 except:

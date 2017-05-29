@@ -1,3 +1,4 @@
+appdirs
 argparse
 python-mpd2
 musicbrainzngs

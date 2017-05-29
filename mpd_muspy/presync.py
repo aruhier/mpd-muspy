@@ -3,8 +3,9 @@
 
 import multiprocessing
 from .muspy_api import Muspy_api
-from .tools import chunks, get_mbid, mpd_get_artists
+from .tools import chunks, get_mbid, mpd_get_artists, get_config
 
+config = get_config()
 try:
     from config import FULLSYNC
 except:

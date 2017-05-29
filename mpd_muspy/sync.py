@@ -1,23 +1,29 @@
 #!/usr/bin/python
 # Author: Anthony Ruhier
 
+import appdirs
 import os
 import mpd
 import multiprocessing
 from multiprocessing.managers import BaseManager
-from . import _current_dir
+from . import _release_name
 from .artist_db import Artist_db
 from .muspy_api import Muspy_api
 from .presync import presync
-from .tools import chunks
+from .tools import chunks, get_config
+
+config = get_config()
 from config import ARTISTS_JSON
 
-ARTISTS_JSON = os.path.join(_current_dir, ARTISTS_JSON)
+ARTISTS_JSON = os.path.join(
+    appdirs.user_data_dir(_release_name), ARTISTS_JSON
+)
 NB_MULTIPROCESS = 5
 
 
 class SyncManager(BaseManager):
     pass
+
 
 SyncManager.register('Artist_db', Artist_db)
 SyncManager.register('MPDClient', mpd.MPDClient)
