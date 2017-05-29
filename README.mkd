@@ -18,15 +18,14 @@ MPD Music Spy is here to solve that for MPD, and add in your MuSpy account all
 the artists listed in your MPD database.
 
 
-Dependencies
+Installation
 ------------
-  * python 3.4 (it certainly works with prior versions, just not tested)
-  * python-appdirs
-  * python-argparse
-  * python-mpd2
-  * python-musicbrainzngs
-  * python-requests
-  * python-urllib3
+
+Run:
+
+```
+pip3 install mpd-muspy
+```
 
 
 Configuration
@@ -40,7 +39,7 @@ config.
 Usage
 -----
 
-Just run: `python3 mpd-muspy`.
+Just run: `mpd-muspy`.
 
 The synchronisation could be long the first time, as it uses MusicBrainz to get
 the artists id. A double check is done when querying the id, by using the
