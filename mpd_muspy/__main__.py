@@ -4,7 +4,7 @@ import appdirs
 import argparse
 import os
 import sys
-from mpd_muspy import _release_name, _version, _current_dir
+from mpd_muspy import _release_name, _version
 
 
 def parse_args():

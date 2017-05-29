@@ -2,7 +2,6 @@
 import appdirs
 import json
 import os
-from . import _current_dir
 from .tools import get_config
 
 config = get_config()
