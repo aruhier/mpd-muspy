@@ -119,5 +119,6 @@ class Muspy_api():
             auth=(MUSPY_USERNAME, MUSPY_PASSWORD),
             verify=self._ssl_verify,
         )
+        r.raise_for_status()
         return [{"name": a["name"].lower(), "mbid": a["mbid"]}
                 for a in r.json()]
