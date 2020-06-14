@@ -10,7 +10,7 @@ from setuptools import setup
 
 setup(
     name="mpd-muspy",
-    version="1.0.1",
+    version="1.0.2",
 
     description="Sync artists of your MPD database with your MuSpy account",
 
