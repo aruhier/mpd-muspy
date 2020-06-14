@@ -75,13 +75,18 @@ def mpd_get_artists(mpdclient):
     """
     mpdclient.connect(SERVER, PORT)
     tag_field = "albumartist" if USE_ALBUMARTIST else "artist"
+    artists = set()
     try:
-        artists = set(str(artist).lower()
-                      for artist in mpdclient.list(tag_field) if len(artist))
+        for entry in mpdclient.list(tag_field):
+            artist = entry[tag_field].lower()
+            if artist:
+                artists.add(artist)
     except mpd.ConnectionError:
         mpdclient.connect(SERVER, PORT)
-        artists = set(str(artist).lower()
-                      for artist in mpdclient.list(tag_field) if len(artist))
+        for entry in mpdclient.list(tag_field):
+            artist = entry[tag_field].lower()
+            if artist:
+                artists.add(artist)
     return artists
 
 
