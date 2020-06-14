@@ -10,7 +10,7 @@ config = get_config()
 class Artist_db():
     def __init__(self, jsonpath=None, artists=None):
         self._artists = artists if artists is not None else dict()
-        self.ignore_list = config.IGNORE_LIST or tuple()
+        self.ignore_list = set(i.lower() for i in config.IGNORE_LIST) or set()
         self.jsonpath = jsonpath
         if jsonpath is not None:
             try:
